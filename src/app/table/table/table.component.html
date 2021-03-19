@@ -1,1 +1,221 @@
-<p>table works!</p>
+<ng-container>
+    <p-table #dt [value]="DataSource" [(selection)]="selectedData" [id]="tableId" editMode="row"
+        [dataKey]="uniqueDataKey" [selectionMode]="tableSelectionMode" (onRowSelect)="onRowSelect($event)"
+        (onRowExpand)="onRowExpand($event)" [globalFilterFields]="SearchableFields">
+        <!--toolbar-->
+        <ng-template *ngIf="showCreateNewIcon || showCheckbox || isFilterable" pTemplate="caption">
+            <label [ngClass]="TableName?'pr-3':''" class="table-Name">{{TableName}}</label>
+            <ng-container *ngIf="TableName !== devCloudStrings.ContainerTableName; else ImportContainer">
+                <div *ngIf="showCreateNewIcon" pRipple class=" mb-2 mr-2 d-inline" intlAddRow [newRow]="addNewRow()"
+                    [table]="dt">
+                    <div class="d-inline icon-container cursor-pointer pr-2">
+                        <i class="intelicon-plus"></i>
+                    </div>
+                    <label class="link-color cursor-pointer">Create New</label>
+                </div>
+            </ng-container>
+            <ng-template #ImportContainer>
+                <button *ngIf="showCreateNewIcon" type="button" (click)="navigateToCreateContainer()"
+                    class="btn-primary-standard btn btn-primary mr-2 mt-0 ">
+                    Import Container
+                </button>
+            </ng-template>
+            <!---->
+            <app-warning-modal *ngIf="showCheckbox" pRipple [title]="devCloudStrings.Delete"
+                [descripiton]="devCloudStrings.DeleteConfirm" [buttonText]="devCloudStrings.Delete_Selected"
+                class="mb-2 mr-2 mt-1" [isEnable]="disableDeleteBtn()" (successAction)="onDeleteSelected()">
+            </app-warning-modal>
+            <div *ngIf="isFilterable" class="w-50 d-inline">
+                <input pInputText class="float-right w-25 height-40 form-control" type="text"
+                    (input)="dt.filterGlobal($event.target.value, 'contains')" [(ngModel)]="SearchText"
+                    [placeholder]="SearchPlaceholder" />
+            </div>
+        </ng-template>
+        <!--header-->
+        <ng-template pTemplate="header">
+            <tr>
+                <th *ngIf="showCheckbox" class="w5-p">
+                    <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+                </th>
+                <ng-container *ngFor="let tableColumn of Columns">
+                    <ng-container *ngIf="tableColumn.isSortable; else NotSortable">
+                        <th [class]="tableColumn.className" [pSortableColumn]="tableColumn.key">{{tableColumn.name}}
+                            <p-sortIcon [field]="tableColumn.key">
+                            </p-sortIcon>
+                        </th>
+                    </ng-container>
+                    <!-- else not sortable -->
+                    <ng-template #NotSortable>
+                        <th [class]="tableColumn.className"> {{tableColumn.name}} </th>
+                    </ng-template>
+
+                </ng-container>
+                <th style="width:8rem" *ngIf="editableTable">Action</th>
+            </tr>
+        </ng-template>
+        <!--body-->
+        <ng-template pTemplate="body" let-DataSource let-editing="editing" let-expanded="expanded" let-ri="rowIndex">
+            <tr [pEditableRow]="DataSource" [pSelectableRow]="DataSource">
+                <td *ngIf="showCheckbox">
+                    <p-tableCheckbox [value]="DataSource"></p-tableCheckbox>
+                </td>
+                <ng-container *ngFor="let data of Columns">
+                    <ng-container *ngIf="!data.isEditable; else editTamplate">
+                        <td [class]="data.className">
+                            <i *ngIf="(DataSource[data.expandedDataSource] && DataSource[data.expandedDataSource].length > 0)"
+                                pRipple [pRowToggler]="DataSource"
+                                [ngClass]="expanded ? 'intelicon-down cursor-pointer' : 'intelicon-right-next cursor-pointer'"></i>
+
+                            <ng-container [ngSwitch]="data.type">
+                                <ng-container *ngSwitchCase="'hyperlink'">
+                                    <a [attr.data]="DataSource.onHoverText"
+                                        [ngClass]="DataSource.onHoverText?'view':''">
+                                        {{DataSource[data.key]}}</a>
+                                </ng-container>
+                                <ng-container *ngSwitchCase="'date'">
+                                    <label>{{DataSource[data.key] | date:'longDate' }}</label>
+                                </ng-container>
+
+                                <ng-container *ngSwitchCase="'datetime'">
+                                    <label>{{DataSource[data.key] | date:'medium' }}</label>
+                                </ng-container>
+
+                                <ng-container *ngSwitchCase="'searchablelable'">
+                                    <label intlHighlightText [content]="DataSource[data.key]" [searchTerm]="SearchText">
+                                        {{DataSource[data.key]}}</label>
+                                </ng-container>
+                                <ng-container *ngSwitchCase="'anchor'">
+                                    <a [ngClass]="DataSource.onHoverText && !!DataSource.onHoverText.length?'tip cursor-pointer':'remove-anchor-text-decoration'"
+                                        tabindex="0">
+                                        {{DataSource[data.key]}}
+                                        <ng-container *ngIf="TableName == devCloudStrings.ContainerTableName; else containerTemplate">
+                                            <span class="tooltiptext"
+                                                *ngIf="DataSource.onHoverText && DataSource.onHoverText.length>0">
+                                                Assigned to the following applications:
+                                                <table>
+                                                    <tr *ngFor="let x of DataSource.onHoverText">
+                                                        <td class="text-break  hover-text">{{x}}</td>
+                                                        <td><button type="button"
+                                                                class="pt-0 pb-0  btn btn-outline-primary"
+                                                                (click)="unassign(DataSource,x)">Unassign</button></td>
+                                                    </tr>
+                                                </table>
+                                            </span>
+                                        </ng-container>
+                                        <ng-template #containerTemplate>
+                                            <span class="tooltiptext"
+                                                *ngIf="DataSource.onHoverText && DataSource.onHoverText.length>0">
+                                                Assigned to the following Containers:
+                                                <table>
+                                                    <tr *ngFor="let x of DataSource.onHoverText">
+                                                        <td class="text-break  hover-text">{{x}}</td>
+                                                        <td><button type="button"
+                                                                class="pt-0 pb-0  btn btn-outline-primary"
+                                                                (click)="unassign(DataSource,x)">Unassign</button></td>
+                                                    </tr>
+                                                </table>
+                                            </span>
+                                        </ng-template>
+                                    </a>
+                                </ng-container>
+                                <ng-container *ngSwitchDefault>
+                                    <label> {{DataSource[data.key]}}</label>
+                                </ng-container>
+                            </ng-container>
+                        </td>
+                    </ng-container>
+                    <ng-template #editTamplate>
+                        <td [class]="data.className">
+                            <ng-container [ngSwitch]="data.type">
+                                <ng-container *ngSwitchCase="'anchor'">
+
+                                </ng-container>
+                                <ng-container *ngSwitchCase="'number'">
+                                    <p-cellEditor>
+                                        <ng-template pTemplate="input">
+                                            <input class="w-100 form-control" intlInputRestriction
+                                                restrict-type="numbersWithCommOnly" pInputText type="text"
+                                                [(ngModel)]="DataSource[data.key]">
+                                        </ng-template>
+                                        <ng-template pTemplate="output">
+                                            <label *ngIf="SearchableFields.includes(data.key)" intlHighlightText
+                                                [content]="DataSource[data.key]" [searchTerm]="SearchText">
+                                                {{DataSource[data.key]}}</label>
+                                            <label *ngIf="!SearchableFields.includes(data.key)">
+                                                {{DataSource[data.key]}}</label>
+                                        </ng-template>
+                                    </p-cellEditor>
+                                </ng-container>
+                                <ng-container *ngSwitchDefault>
+                                    <p-cellEditor>
+                                        <ng-template pTemplate="input">
+                                            <input class="w-100 form-control" intlInputRestriction
+                                                restrict-type="underscorehyphenWithAlphaOnly" pInputText type="text"
+                                                [(ngModel)]="DataSource[data.key]">
+                                        </ng-template>
+                                        <ng-template pTemplate="output">
+                                            <label *ngIf="SearchableFields.includes(data.key)" intlHighlightText
+                                                [content]="DataSource[data.key]" [searchTerm]="SearchText">
+                                                {{DataSource[data.key]}}</label>
+                                            <label *ngIf="!SearchableFields.includes(data.key)">
+                                                {{DataSource[data.key]}}</label>
+                                        </ng-template>
+                                    </p-cellEditor>
+                                </ng-container>
+                            </ng-container>
+                        </td>
+                    </ng-template>
+                </ng-container>
+                <td *ngIf="editableTable" class="text-center">
+                    <div class="d-inline" *ngIf="showEditAction">
+                        <button *ngIf="!editing" pRipple pInitEditableRow (click)="onEditClick(DataSource)"
+                            class=" pl-0 d-inline pr-4 border-0 cursor-pointer  icon-button bg-transparent">
+                            <i class="intelicon-compose icon-button"></i>
+                        </button>
+                        <button *ngIf="editing" [disabled]="disableSaveBtn(DataSource)" pRipple pSaveEditableRow
+                            (click)="onSaveClick(DataSource, ri)"
+                            class=" d-inline border-0 icon-button cursor-pointer pr-4 bg-transparent">
+                            <i class="intelicon-check p-0"></i>
+                        </button>
+                        <button *ngIf="editing" pRipple pCancelEditableRow (click)="onCancelClick(DataSource, ri)"
+                            class="d-inline border-0 pr-4 icon-button cursor-pointer bg-transparent">
+                            <i class="intelicon-close-max"></i>
+                        </button>
+                    </div>
+                    <div class="d-inline" *ngIf="showDeleteAction">
+                        <button *ngIf="!editing" pRipple pInitEditableRow (click)="onDeleteClick(DataSource)"
+                            class=" pl-0 d-inline border-0 cursor-pointer icon-button bg-transparent">
+                            <i class="intelicon-trash-outlined"></i>
+                        </button>
+                    </div>
+                    <div class="d-inline" *ngIf="showAssignAction">
+                        <button *ngIf="!editing" type="button" (click)="onAssignClick(DataSource)"
+                            class="d-inline border-0 bg-transparent"><i
+                                class="intelicon-vertical-menu icon-button"></i></button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+        <!--expanded table-->
+        <ng-template pTemplate="rowexpansion" let-DataSource let-i>
+            <tr class="sub-table-bg-color">
+                <td colspan="7">
+                    <div class="p-p-3">
+                        <intl-table [DataSource]="getExtandedTableDetails(DataSource)" [Columns]="ExpandedColums">
+                        </intl-table>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage" let-columns>
+            <tr>
+                <td [attr.colspan]="colSpanSize">
+                    <div class="d-flex justify-content-center align-items-center">
+                        No Records Found
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</ng-container>

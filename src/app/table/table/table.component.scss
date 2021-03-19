@@ -1,0 +1,71 @@
+
+
+$icon-font: 'x-large';
+
+.sub-table-bg-color{
+    background-color: #e9ecef!important;
+  }
+
+i{
+    font-size: $icon-font!important;    
+    border-color: transparent;
+    border-radius: 60px;
+}
+
+.table-Name{
+  font-family: 'Intel Clear', sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 20px;
+    color: #707070;
+    text-align: left;
+    line-height: 20px;
+}
+
+.tip {
+  display: inline;
+  position: relative;
+  i{
+    font-style: normal;
+  }
+}
+ 
+.tip .tooltiptext {
+  visibility: hidden;
+  width: 120px;
+  background-color:white;
+  color:black;
+  //text-align: center;
+  border-radius: none;
+  padding: 5px 5px;
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -60px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 98;
+}
+ 
+.tip:focus-within .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+  font-size: 13px;
+  padding-top: 10px;
+  border: 1px solid #5b6269;
+  height: auto;
+  width: 280px;
+}
+
+.hover-text{
+  font-family: 'Intel Clear Bold', 'Intel Clear Regular', 'Intel Clear', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: normal;
+  letter-spacing: normal;
+}
+
+.remove-anchor-text-decoration{
+  text-decoration: none;
+  color: black;
+}
